@@ -23,7 +23,7 @@ Based on Chameleon's EVAT backend ([Chameleon-company/EVAT-App-BE](https://githu
 | Production API | http://localhost:8082/api/docs | |
 | Prometheus | http://localhost:9090/alerts | |
 | Alertmanager | http://localhost:9093 | |
-| Grafana | http://localhost:3000 | admin / evat-admin |
+| Grafana | http://localhost:3300 | admin / evat-admin |
 
 ---
 
@@ -113,6 +113,7 @@ All reports are archived: `reports/security/npm-audit.json`, `trivy-image.txt/js
 | SEC-05 | `axios`: SSRF through NO_PROXY bypass; `form-data`: CRLF injection; `path-to-regexp`: ReDoS (Express) | High | **Fixed.** Upgraded via `npm audit fix`. |
 | SEC-06 | `nodemailer <=9.1.0`: email sent to an unintended domain | High | **Fixed.** Major upgrade to 10.x. The admin 2FA mail code still compiles and its tests pass. |
 | SEC-07 | `decode-uri-component <=0.4.2`: DoS (transitive, through the Google Maps client) | Moderate | **Accepted risk**, documented in `.trivyignore`. It only decodes Google API response URLs, never user input, so the path isn't reachable, and there's no fix within `query-string@7`. |
+| SEC-08 | `POST /api/auth/register` returned the bcrypt **password hash** (and refresh-token fields) in the response body. Found during manual testing in Swagger. | Medium (sensitive data exposure, OWASP A02/A04) | **Fixed.** The controller now strips `password`, `refreshToken` and `refreshTokenExpiresAt` before responding, and a unit test asserts the password is never returned. |
 
 Before the pipeline: **42 production vulnerabilities** (2 critical, 10 high, 25 moderate, 5 low). After: **2 moderate** (`decode-uri-component` and its parent `query-string`, both SEC-07), 0 high, 0 critical.
 

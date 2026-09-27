@@ -25,10 +25,13 @@ export default class UserController {
     const { email, password, firstName, lastName, mobile} = req.body;
 
     try {
-      const user = await this.userService.register(email, password, firstName, lastName, mobile);
+      const user: any = await this.userService.register(email, password, firstName, lastName, mobile);
+      // Security fix (EVAT-SEC-08): never return the password hash or refresh token
+      const plain = user && typeof user.toObject === "function" ? user.toObject() : { ...user };
+      const { password: _pw, refreshToken: _rt, refreshTokenExpiresAt: _rte, ...safeUser } = plain;
       return res
         .status(201)
-        .json({ message: "User registered successfully", data: user });
+        .json({ message: "User registered successfully", data: safeUser });
     } catch (error: any) {
       return res.status(400).json({ message: error.message });
     }

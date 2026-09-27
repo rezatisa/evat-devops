@@ -75,10 +75,13 @@ describe("UserController", () => {
         userData.mobile,
       );
       expect(statusMock).toHaveBeenCalledWith(201);
+      const { password: _pw, ...expectedUser } = mockUser;
       expect(jsonMock).toHaveBeenCalledWith({
         message: "User registered successfully",
-        data: mockUser
+        data: expectedUser
       });
+      // The password (hash) must never be sent back to the client
+      expect(jsonMock.mock.calls[0][0].data).not.toHaveProperty("password");
     });
 
     test("Case: Registration fails due to duplicate email", async () => {
