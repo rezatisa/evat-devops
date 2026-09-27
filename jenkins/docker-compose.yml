@@ -1,0 +1,44 @@
+# Local DevOps toolchain: Jenkins + SonarQube.
+#   cd jenkins && docker compose up -d --build
+#   Jenkins   -> http://localhost:8080   (admin / value of JENKINS_ADMIN_PASSWORD, default "admin")
+#   SonarQube -> http://localhost:9000
+name: evat-ci
+
+services:
+  jenkins:
+    build: .
+    image: evat-jenkins:local
+    container_name: evat-jenkins
+    user: root
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [ci]
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: evat-sonarqube
+    restart: unless-stopped
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+    networks: [ci]
+
+volumes:
+  jenkins_home:
+  sonar_data:
+  sonar_extensions:
+
+networks:
+  ci:
+    name: evat-ci-net

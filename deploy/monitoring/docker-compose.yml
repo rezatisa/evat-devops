@@ -1,0 +1,55 @@
+# Monitoring & alerting for the PRODUCTION environment.
+# Config files are baked into small images (build:) instead of bind-mounted,
+# so this works when docker compose is run from inside the Jenkins container.
+name: evat-monitoring
+
+services:
+  prometheus:
+    build: ./prometheus
+    image: evat-prometheus:local
+    container_name: evat-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    ports: ["9090:9090"]
+    networks: [monitoring, evat-prod]
+
+  alertmanager:
+    build: ./alertmanager
+    image: evat-alertmanager:local
+    container_name: evat-alertmanager
+    restart: unless-stopped
+    ports: ["9093:9093"]
+    networks: [monitoring]
+
+  # Receives alert notifications from Alertmanager and logs them.
+  # View with: docker logs -f evat-alert-receiver
+  alert-receiver:
+    image: mendhak/http-https-echo:31
+    container_name: evat-alert-receiver
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: "8080"
+      LOG_IGNORE_PATH: "/ping"
+    networks: [monitoring]
+
+  grafana:
+    build: ./grafana
+    image: evat-grafana:local
+    container_name: evat-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-evat-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    ports: ["3000:3000"]
+    networks: [monitoring]
+
+networks:
+  monitoring:
+    name: evat-monitoring-net
+  evat-prod:
+    name: evat-prod-net
+    external: true

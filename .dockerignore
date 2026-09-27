@@ -1,0 +1,18 @@
+node_modules
+dist
+reports
+coverage
+.git
+.scannerwork
+test
+Demand Forecasting
+insights_api
+cost_api
+weatherRoute_api
+src/src
+src-zip.zip
+*.md
+.env
+Jenkinsfile
+deploy
+jenkins

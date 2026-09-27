@@ -1,0 +1,23 @@
+route:
+  receiver: team-webhook
+  group_by: [alertname]
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+
+receivers:
+  - name: team-webhook
+    webhook_configs:
+      - url: http://alert-receiver:8080/alerts
+        send_resolved: true
+    # --- Optional: also email the team (Gmail needs an App Password) ---
+    # email_configs:
+    #   - to: your-team@example.com
+    #     from: your-account@gmail.com
+    #     smarthost: smtp.gmail.com:587
+    #     auth_username: your-account@gmail.com
+    #     auth_password: your-16-char-app-password
+    #     send_resolved: true
+    # --- Optional: Discord channel webhook ---
+    # discord_configs:
+    #   - webhook_url: https://discord.com/api/webhooks/XXX/YYY

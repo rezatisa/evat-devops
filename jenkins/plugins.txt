@@ -1,0 +1,13 @@
+configuration-as-code
+workflow-aggregator
+pipeline-stage-view
+pipeline-graph-view
+git
+github
+credentials-binding
+timestamper
+junit
+coverage
+htmlpublisher
+sonar
+ws-cleanup

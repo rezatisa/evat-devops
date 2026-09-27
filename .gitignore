@@ -1,0 +1,12 @@
+/node_modules
+.env
+/.vscode
+/auth
+*.js
+
+# DevOps pipeline
+!jest.ci.config.js
+!jest.config.js
+dist/
+reports/
+.scannerwork/

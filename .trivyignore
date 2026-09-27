@@ -1,0 +1,12 @@
+# Trivy accepted-risk list. Every entry needs a justification and review date.
+# The pipeline gate fails on CRITICAL vulnerabilities that have a fix available;
+# anything listed here is excluded from that gate but still shown in the report.
+#
+# Format: <CVE or GHSA id>  (comment lines start with #)
+#
+# GHSA-vcc3-ghjq-m6fr  decode-uri-component <=0.4.2 (MODERATE)
+#   Pulled in by @googlemaps/google-maps-services-js -> query-string@7.
+#   Only used to decode URLs of responses returned by Google's API, never
+#   user-supplied input, so the DoS path is not reachable. No fixed version is
+#   available within query-string@7. Review: next Google Maps client upgrade.
+GHSA-vcc3-ghjq-m6fr

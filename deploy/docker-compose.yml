@@ -1,0 +1,44 @@
+# One compose file, two environments. The Jenkins pipeline runs it as:
+#   staging:    docker compose -p evat-staging --env-file deploy/staging.env    -f deploy/docker-compose.yml up -d
+#   production: docker compose -p evat-prod    --env-file deploy/production.env -f deploy/docker-compose.yml up -d
+# IMAGE_TAG and JWT_SECRET are injected by Jenkins at deploy time.
+name: evat-${ENV_NAME:-staging}
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: evat-${ENV_NAME:-staging}-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [evat]
+
+  api:
+    image: evat-api:${IMAGE_TAG:?IMAGE_TAG must be set}
+    container_name: evat-${ENV_NAME:-staging}-api
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${ENV_NAME:-staging}
+      PORT: "8080"
+      MONGODB_URI: mongodb://mongo:27017/evat_${ENV_NAME:-staging}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-}
+      DOMAIN_URL: http://localhost
+    ports:
+      - "${API_PORT:-8081}:8080"
+    networks: [evat]
+
+volumes:
+  mongo-data:
+
+networks:
+  evat:
+    name: evat-${ENV_NAME:-staging}-net

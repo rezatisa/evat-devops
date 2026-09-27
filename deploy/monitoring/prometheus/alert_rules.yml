@@ -1,0 +1,46 @@
+groups:
+  - name: evat-api
+    rules:
+      - alert: EvatApiDown
+        expr: up{job="evat-api-prod"} == 0
+        for: 30s
+        labels: { severity: critical }
+        annotations:
+          summary: "EVAT API (prod) is down"
+          description: "Prometheus cannot scrape {{ $labels.instance }} for more than 30s."
+
+      - alert: EvatDatabaseDown
+        expr: evat_db_up{env="prod"} == 0
+        for: 30s
+        labels: { severity: critical }
+        annotations:
+          summary: "EVAT API lost its MongoDB connection"
+          description: "evat_db_up has been 0 for 30s on {{ $labels.instance }}."
+
+      - alert: EvatHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{env="prod",status_code=~"5.."}[2m]))
+            / clamp_min(sum(rate(http_requests_total{env="prod"}[2m])), 0.001) > 0.05
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "More than 5% of EVAT API requests are failing (5xx)"
+          description: "5xx ratio is {{ $value | humanizePercentage }} over the last 2 minutes."
+
+      - alert: EvatHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{env="prod"}[5m]))) > 1
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "EVAT API p95 latency above 1s"
+          description: "p95 latency is {{ $value | humanizeDuration }}."
+
+      - alert: EvatHighMemory
+        expr: process_resident_memory_bytes{env="prod"} > 400 * 1024 * 1024
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "EVAT API memory above 400MB"
+          description: "RSS is {{ $value | humanize1024 }}B."
