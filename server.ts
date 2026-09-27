@@ -96,7 +96,7 @@ const options = {
         bearerAuth: [],
       },
     ],
-    servers: [{ url: `${DOMAIN_URL}:${PORT}` }],
+       servers: [{ url: "/" }],
   },
   apis: ["./src/routes/*.ts", "./src/routes/*.js"],
 };
