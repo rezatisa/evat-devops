@@ -2,7 +2,7 @@
   "uid": "evat-api",
   "title": "EVAT API - Production",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
   "time": {
     "from": "now-30m",
@@ -91,7 +91,19 @@
           "expr": "count by (version) (evat_db_up{env=\"prod\"})",
           "legendFormat": "{{version}}"
         }
-      ]
+      ],
+      "options": {
+        "textMode": "name",
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
     },
     {
       "id": 4,
@@ -172,7 +184,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_requests_total{env=\"prod\",status_code=~\"5..\"}[2m])) / clamp_min(sum(rate(http_requests_total{env=\"prod\"}[2m])),0.001)",
+          "expr": "sum(rate(http_requests_total{env=\"prod\",status_code=~\"5..\"}[2m])) / clamp_min(sum(rate(http_requests_total{env=\"prod\"}[2m])),0.001) or vector(0)",
           "legendFormat": "5xx ratio"
         }
       ]
