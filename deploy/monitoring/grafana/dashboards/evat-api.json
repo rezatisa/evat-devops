@@ -2,7 +2,7 @@
   "uid": "evat-api",
   "title": "EVAT API - Production",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "10s",
   "time": {
     "from": "now-30m",
@@ -32,8 +32,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "up{job=\"evat-api-prod\"}",
-          "legendFormat": "api"
+          "expr": "max(up{job=\"evat-api-prod\"})",
+          "legendFormat": "api",
+          "instant": true,
+          "range": false
         }
       ]
     },
@@ -60,8 +62,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "evat_db_up{env=\"prod\"}",
-          "legendFormat": "db"
+          "expr": "max(evat_db_up{env=\"prod\"})",
+          "legendFormat": "db",
+          "instant": true,
+          "range": false
         }
       ]
     },
@@ -89,7 +93,9 @@
         {
           "refId": "A",
           "expr": "count by (version) (evat_db_up{env=\"prod\"})",
-          "legendFormat": "{{version}}"
+          "legendFormat": "{{version}}",
+          "instant": true,
+          "range": false
         }
       ],
       "options": {
@@ -129,7 +135,9 @@
         {
           "refId": "A",
           "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)",
-          "legendFormat": "alerts"
+          "legendFormat": "alerts",
+          "instant": true,
+          "range": false
         }
       ]
     },
@@ -177,7 +185,9 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
