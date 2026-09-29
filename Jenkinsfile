@@ -266,8 +266,6 @@ EOF
     // -------------------------------------------------------------------------
     stage('Monitoring & Alerting') {
       steps {
-            stage('Monitoring & Alerting') {
-      steps {
         script {
           // Inject the Discord webhook from Jenkins credentials at build time so the
           // secret is never stored in git (SEC-09). Skipped if the credential is absent.
@@ -291,9 +289,6 @@ EOF
       }
     }
 
-      }
-    }
-  }
 
   post {
     always {
