@@ -5,13 +5,18 @@
 //       -> Release (production, with automatic rollback) -> Monitoring
 //
 // Runs on the Jenkins image in ./jenkins (Node 20, Docker CLI, sonar-scanner,
-// Trivy). Credentials used (created automatically by ./jenkins/casc.yaml):
-//   sonar-token        Secret text  - SonarQube analysis token
-//   evat-jwt-staging   Secret text  - JWT secret for the staging API
-//   evat-jwt-prod      Secret text  - JWT secret for the production API
-//   github-creds       User/token   - OPTIONAL, pushes the release git tag
-//   dockerhub-creds    User/token   - OPTIONAL, pushes the release image
+// Trivy). Credentials used:
+//   Created automatically by ./jenkins/casc.yaml:
+//     sonar-token        Secret text  - SonarQube analysis token
+//     evat-jwt-staging   Secret text  - JWT secret for the staging API
+//     evat-jwt-prod      Secret text  - JWT secret for the production API
+//   Added manually in Jenkins (optional):
+//     discord-webhook    Secret text  - Discord alert channel (never commit it, see SEC-09)
+//     github-creds       User/token   - pushes the release git tag to GitHub
+//     dockerhub-creds    User/token   - pushes the release image to Docker Hub
 // =============================================================================
+
+
 pipeline {
   agent any
 
@@ -261,12 +266,31 @@ EOF
     // -------------------------------------------------------------------------
     stage('Monitoring & Alerting') {
       steps {
+            stage('Monitoring & Alerting') {
+      steps {
+        script {
+          // Inject the Discord webhook from Jenkins credentials at build time so the
+          // secret is never stored in git (SEC-09). Skipped if the credential is absent.
+          try {
+            withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_WEBHOOK')]) {
+              sh '''
+                sed -i "s|^    # __DISCORD_CONFIG__.*|    discord_configs:\\n      - webhook_url: ${DISCORD_WEBHOOK}\\n        send_resolved: true|" \
+                  deploy/monitoring/alertmanager/alertmanager.yml
+                echo "Discord alert channel configured"
+              '''
+            }
+          } catch (ignored) { echo 'discord-webhook credential not configured - alerts go to the webhook receiver only' }
+        }
         sh '''
           docker compose -f deploy/monitoring/docker-compose.yml up -d --build --remove-orphans
+          git checkout -- deploy/monitoring/alertmanager/alertmanager.yml   # remove injected secret from workspace
           # Pick up any rule/config changes without restarting
           docker run --rm --network ${MONITOR_NET} ${CURL_IMAGE} -s -X POST http://prometheus:9090/-/reload || true
         '''
         sh 'docker run --rm -i --network ${MONITOR_NET} ${CURL_IMAGE} sh -s < deploy/monitoring/verify.sh'
+      }
+    }
+
       }
     }
   }

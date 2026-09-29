@@ -5,11 +5,10 @@ route:
   group_interval: 30s
   repeat_interval: 1h
 
-   receivers:
-     - name: team-webhook
-       webhook_configs:
-         - url: http://alert-receiver:8080/alerts
-           send_resolved: true
-       discord_configs:
-         - webhook_url: https://discord.com/api/webhooks/1554292673685356698/D7AGwQ0Fpe8daAq2sovIpnSYAlhw5jrMlcePLkiWN3O1tlCg0FGB4RFlE7BXoRVa_-Ec
-           send_resolved: true
+receivers:
+  - name: team-webhook
+    webhook_configs:
+      - url: http://alert-receiver:8080/alerts
+        send_resolved: true
+    # DISCORD_CONFIG injected by Jenkins from the 'discord-webhook' credential.
+
