@@ -12,6 +12,7 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-lifecycle
+      - --web.external-url=http://localhost:9090
     ports: ["9090:9090"]
     networks: [monitoring, evat-prod]
 
@@ -20,6 +21,10 @@ services:
     image: evat-alertmanager:local
     container_name: evat-alertmanager
     restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --web.external-url=http://localhost:9093
     ports: ["9093:9093"]
     networks: [monitoring]
 
