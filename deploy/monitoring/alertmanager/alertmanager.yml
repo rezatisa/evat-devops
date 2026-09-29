@@ -10,5 +10,5 @@ receivers:
     webhook_configs:
       - url: http://alert-receiver:8080/alerts
         send_resolved: true
-    # DISCORD_CONFIG injected by Jenkins from the 'discord-webhook' credential.
+    # __DISCORD_CONFIG__ injected by Jenkins from the 'discord-webhook' credential.
 
