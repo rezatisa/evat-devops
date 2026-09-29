@@ -290,6 +290,8 @@ EOF
     }
 
 
+  }
+
   post {
     always {
       archiveArtifacts artifacts: 'reports/**/*.txt,reports/**/*.json', allowEmptyArchive: true
