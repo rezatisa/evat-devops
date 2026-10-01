@@ -1,5 +1,5 @@
 jenkins:
-  systemMessage: "EVAT API - DevOps pipeline (SIT223/SIT753 7.3HD)"
+  systemMessage: "EVAT API CI/CD - Build, Test, Code Quality, Security, Deploy, Release, Monitoring"
   numExecutors: 2
   securityRealm:
     local:
