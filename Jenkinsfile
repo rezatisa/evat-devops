@@ -5,12 +5,14 @@
 //
 // Runs on the Jenkins image in ./jenkins (Node 20, Docker CLI, sonar-scanner,
 // Trivy). Credentials used:
-//   Created automatically by ./jenkins/casc.yaml:
-//     sonar-token        Secret text  - SonarQube analysis token
+//   Created automatically by ./jenkins/casc.yaml from ./jenkins/.env:
+//     sonar-token        Secret text  - SonarQube analysis token (written by sonar-setup.sh)
 //     evat-jwt-staging   Secret text  - JWT secret for the staging API
 //     evat-jwt-prod      Secret text  - JWT secret for the production API
+//     discord-webhook    Secret text  - Discord alert channel (DISCORD_WEBHOOK in .env, copied
+//                                       from Discord > Integrations > Webhooks; never commit it,
+//                                       see SEC-09). Skipped if unset.
 //   Added manually in Jenkins (optional):
-//     discord-webhook    Secret text  - Discord alert channel (never commit it, see SEC-09, copy from discord integration)
 //     github-creds       User/token   - pushes the release git tag to GitHub
 //     dockerhub-creds    User/token   - pushes the release image to Docker Hub
 // =============================================================================
@@ -307,7 +309,7 @@ EOF
          Production  http://localhost:8082/api/docs
          Prometheus  http://localhost:9090/alerts
          Alertmgr    http://localhost:9093
-         Grafana     http://localhost:3300  (dashboard: EVAT API - Production)
+         Grafana     http://localhost:3000  (dashboard: EVAT API - Production)
       ============================================================
       """
     }

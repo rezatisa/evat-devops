@@ -23,7 +23,7 @@ Based on Chameleon's EVAT backend ([Chameleon-company/EVAT-App-BE](https://githu
 | Production API | http://localhost:8082/api/docs | |
 | Prometheus | http://localhost:9090/alerts | |
 | Alertmanager | http://localhost:9093 | |
-| Grafana | http://localhost:3300 | admin / evat-admin |
+| Grafana | http://localhost:3000 | admin / evat-admin |
 
 ---
 
@@ -38,7 +38,7 @@ git push -u origin main
 
 # 2. Start Jenkins + SonarQube (first build of the Jenkins image takes ~5 min)
 cd jenkins
-cp .env.example .env
+cp .env.example .env      # then set DISCORD_WEBHOOK (optional) and your own JWT secrets
 docker compose up -d --build
 
 # 3. Configure SonarQube (password, project, quality gate, token → Jenkins)
@@ -52,6 +52,8 @@ Jenkins → **New Item** → name `evat-api` → **Pipeline** → OK →
 *Pipeline* section: **Pipeline script from SCM** → SCM **Git** → Repository URL = your repo → Branch `*/main` → Script Path `Jenkinsfile` → **Save** → **Build Now**.
 
 After the first manual build, `pollSCM` picks up every push automatically.
+
+All required credentials (`sonar-token`, `evat-jwt-staging`, `evat-jwt-prod`, `discord-webhook`) are created automatically by JCasC from `jenkins/.env`. The Discord webhook URL is the only value you paste in by hand (Discord → Server Settings → Integrations → Webhooks → Copy Webhook URL); if it's empty, alerts go to the internal webhook receiver only.
 
 Optional credentials (Manage Jenkins → Credentials → Global):
 - `github-creds` (username + GitHub token): Release pushes the `v1.0.N` git tag to GitHub.
@@ -85,7 +87,7 @@ Without them, the pipeline still passes and keeps the tag and image locally.
 - The custom **EVAT Gate** is created by `jenkins/sonar-setup.sh`. It fails the build on any of these:
   - a new bug, vulnerability, or maintainability rating worse than A
   - more than 3% duplicated new lines
-  - less than 50% coverage on new code
+  - less than 80% coverage on new code
   - unreviewed new security hotspots
   - overall coverage below 10%
 - New code means changes since the previous version, and every build sets `sonar.projectVersion`, so SonarQube's activity graph tracks trends per release.
@@ -114,7 +116,7 @@ All reports are archived: `reports/security/npm-audit.json`, `trivy-image.txt/js
 | SEC-06 | `nodemailer <=9.1.0`: email sent to an unintended domain | High | **Fixed.** Major upgrade to 10.x. The admin 2FA mail code still compiles and its tests pass. |
 | SEC-07 | `decode-uri-component <=0.4.2`: DoS (transitive, through the Google Maps client) | Moderate | **Accepted risk**, documented in `.trivyignore`. It only decodes Google API response URLs, never user input, so the path isn't reachable, and there's no fix within `query-string@7`. |
 | SEC-08 | `POST /api/auth/register` returned the bcrypt **password hash** (and refresh-token fields) in the response body. Found during manual testing in Swagger. | Medium (sensitive data exposure, OWASP A02/A04) | **Fixed.** The controller now strips `password`, `refreshToken` and `refreshTokenExpiresAt` before responding, and a unit test asserts the password is never returned. |
-| SEC-09 | Discord alert **webhook URL committed to the public repo** in `alertmanager.yml`. Detected within minutes by GitGuardian secret scanning. | High (leaked credential: anyone could post fake alerts to the team channel) | **Fixed.** Leaked webhook revoked in Discord and replaced; the new URL is stored as the Jenkins secret-text credential `discord-webhook` and injected into the Alertmanager config at build time, so it never touches git. The URL left in git history is dead. |
+| SEC-09 | Discord alert **webhook URL committed to the public repo** in `alertmanager.yml`. Detected within minutes by GitGuardian secret scanning. | High (leaked credential: anyone could post fake alerts to the team channel) | **Fixed.** Leaked webhook revoked in Discord and replaced; the new URL is kept in the git-ignored `jenkins/.env`, loaded by JCasC as the Jenkins secret-text credential `discord-webhook`, and injected into the Alertmanager config at build time, so it never touches git. The URL left in git history is dead. |
 
 Before the pipeline: **42 production vulnerabilities** (2 critical, 10 high, 25 moderate, 5 low). After: **2 moderate** (`decode-uri-component` and its parent `query-string`, both SEC-07), 0 high, 0 critical.
 
@@ -144,7 +146,7 @@ The runtime image was also hardened: non-root `USER node`, npm/yarn/corepack rem
   - Node process metrics
   - labels for `env` and `version`
 - `/health` returns 503 when MongoDB is down.
-- **Stack** (`deploy/monitoring`): Prometheus scrapes production every 10s, and Alertmanager routes alerts to the team webhook, with email and Discord receivers included, commented out.
+- **Stack** (`deploy/monitoring`): Prometheus scrapes production every 10s, and Alertmanager routes alerts to the team webhook and to Discord. The Discord webhook URL is injected at build time from the `discord-webhook` credential, so it never touches git.
 - A Grafana dashboard is provisioned automatically. It shows up/DB status, version, firing alerts, requests/sec by route, 5xx ratio, p95 latency and memory.
 - **Alert rules:** `EvatApiDown` (critical), `EvatDatabaseDown` (critical), `EvatHighErrorRate` (>5% 5xx), `EvatHighLatency` (p95 >1s) and `EvatHighMemory` (>400MB).
 - **Pipeline gate:** `deploy/monitoring/verify.sh` checks that:
@@ -167,9 +169,9 @@ The runtime image was also hardened: non-root `USER node`, npm/yarn/corepack rem
    - Release: tag, release notes, and the rollback code
 5. **(1.5 min) Monitoring:**
    - Show the Grafana dashboard and Prometheus targets.
-   - Run `sh deploy/monitoring/simulate-outage.sh` and watch `EvatApiDown` go pending, then firing, at `:9090/alerts`.
-   - Show the notification with `docker logs evat-alert-receiver`.
-   - Run `docker start evat-prod-api` and show the resolved alert.
+   - Run `sh deploy/monitoring/simulate-outage.sh` (or `docker stop evat-prod-api`) and watch `EvatApiDown` go pending, then firing, at `:9090/alerts`.
+   - Show the FIRING message in the Discord channel.
+   - Run `docker start evat-prod-api` and show the RESOLVED message in Discord.
 6. **(0.5 min, optional) Gates.** Show a failing gate (for example, break a test) so the pipeline stops before deploy.
 
 ## 4. Changes made to the upstream project

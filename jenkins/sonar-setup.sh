@@ -45,7 +45,7 @@ cond new_reliability_rating     GT 1    # any new bug (rating worse than A)
 cond new_security_rating        GT 1    # any new vulnerability
 cond new_maintainability_rating GT 1    # new technical debt ratio > 5%
 cond new_duplicated_lines_density GT 3  # > 3% duplicated new lines
-cond new_coverage               LT 50   # < 50% coverage on new code
+cond new_coverage               LT 80   # < 80% coverage on new code
 cond new_security_hotspots_reviewed LT 100  # unreviewed new hotspots
 cond coverage                   LT 10   # overall coverage floor (baseline ~15%)
 api qualitygates/select --data-urlencode "gateName=$GATE" --data-urlencode "projectKey=$PROJECT" >/dev/null
