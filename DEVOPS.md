@@ -1,4 +1,4 @@
-# EVAT API: Jenkins DevOps pipeline (SIT223/SIT753 7.3HD)
+# EVAT API: Jenkins DevOps pipeline (Chameleon)
 
 Based on Chameleon's EVAT backend ([Chameleon-company/EVAT-App-BE](https://github.com/Chameleon-company/EVAT-App-BE)): a Node.js, Express, TypeScript and MongoDB REST API (about 98 documented endpoints, including auth, profiles, vehicles, stations, bookings, reviews and admin). All 7 stages are implemented and automated. The only manual step is the one-time SonarQube setup script.
 

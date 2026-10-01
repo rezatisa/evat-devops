@@ -1,6 +1,5 @@
 // =============================================================================
-// EVAT API - Jenkins CI/CD pipeline (SIT223/SIT753 7.3HD)
-//
+// EVAT API Backend - Jenkins CI/CD pipeline (EVAT-Chameleon) 7.3HD
 // Build -> Test -> Code Quality -> Security -> Deploy (staging)
 //       -> Release (production, with automatic rollback) -> Monitoring
 //
@@ -11,7 +10,7 @@
 //     evat-jwt-staging   Secret text  - JWT secret for the staging API
 //     evat-jwt-prod      Secret text  - JWT secret for the production API
 //   Added manually in Jenkins (optional):
-//     discord-webhook    Secret text  - Discord alert channel (never commit it, see SEC-09)
+//     discord-webhook    Secret text  - Discord alert channel (never commit it, see SEC-09, copy from discord integration)
 //     github-creds       User/token   - pushes the release git tag to GitHub
 //     dockerhub-creds    User/token   - pushes the release image to Docker Hub
 // =============================================================================
