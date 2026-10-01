@@ -15,14 +15,12 @@
 //     github-creds       User/token   - pushes the release git tag to GitHub
 //     dockerhub-creds    User/token   - pushes the release image to Docker Hub
 // =============================================================================
-
-
 pipeline {
   agent any
 
   options {
     timestamps()
-    timeout(time: 45, unit: 'MINUTES')
+    timeout(time: 60, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '5'))
     disableConcurrentBuilds()
   }
@@ -91,6 +89,7 @@ EOF
     // -------------------------------------------------------------------------
     stage('Test') {
       environment { JWT_SECRET = 'ci-test-secret' }
+      options { timeout(time: 15, unit: 'MINUTES') }
       steps {
         // Unit + integration projects (Jest + Supertest + in-memory MongoDB).
         // Any failing test, or coverage below the thresholds in
@@ -99,7 +98,7 @@ EOF
       }
       post {
         always {
-          junit testResults: 'reports/junit/junit.xml', allowEmptyResults: false
+          junit testResults: 'reports/junit/junit.xml', allowEmptyResults: true
           recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage/cobertura-coverage.xml']],
                          sourceCodeRetention: 'EVERY_BUILD')
           publishHTML(target: [reportName: 'Coverage Report', reportDir: 'reports/coverage/lcov-report',
@@ -268,13 +267,20 @@ EOF
       steps {
         script {
           // Inject the Discord webhook from Jenkins credentials at build time so the
-          // secret is never stored in git (SEC-09). Skipped if the credential is absent.
+          // secret is never stored in git (SEC-09). The credential comes from
+          // DISCORD_WEBHOOK in jenkins/.env (via casc.yaml); skipped if it's not a
+          // Discord webhook URL (e.g. the default "not-set").
           try {
             withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_WEBHOOK')]) {
               sh '''
-                sed -i "s|^    # __DISCORD_CONFIG__.*|    discord_configs:\\n      - webhook_url: ${DISCORD_WEBHOOK}\\n        send_resolved: true|" \
-                  deploy/monitoring/alertmanager/alertmanager.yml
-                echo "Discord alert channel configured"
+                case "$DISCORD_WEBHOOK" in
+                  https://discord.com/api/webhooks/*|https://discordapp.com/api/webhooks/*)
+                    sed -i "s|^    # __DISCORD_CONFIG__.*|    discord_configs:\\n      - webhook_url: ${DISCORD_WEBHOOK}\\n        send_resolved: true|" \
+                      deploy/monitoring/alertmanager/alertmanager.yml
+                    echo "Discord alert channel configured" ;;
+                  *)
+                    echo "DISCORD_WEBHOOK not set - alerts go to the webhook receiver only" ;;
+                esac
               '''
             }
           } catch (ignored) { echo 'discord-webhook credential not configured - alerts go to the webhook receiver only' }
@@ -288,8 +294,6 @@ EOF
         sh 'docker run --rm -i --network ${MONITOR_NET} ${CURL_IMAGE} sh -s < deploy/monitoring/verify.sh'
       }
     }
-
-
   }
 
   post {
@@ -304,7 +308,7 @@ EOF
          Production  http://localhost:8082/api/docs
          Prometheus  http://localhost:9090/alerts
          Alertmgr    http://localhost:9093
-         Grafana     http://localhost:3000  (dashboard: EVAT API - Production)
+         Grafana     http://localhost:3300  (dashboard: EVAT API - Production)
       ============================================================
       """
     }

@@ -28,6 +28,11 @@ credentials:
               id: "evat-jwt-prod"
               description: "JWT secret - production"
               secret: "${JWT_SECRET_PROD:-prod-change-me}"
+          - string:
+              scope: GLOBAL
+              id: "discord-webhook"
+              description: "Discord alert webhook"
+              secret: "${DISCORD_WEBHOOK:-not-set}"
 
 unclassified:
   location:
