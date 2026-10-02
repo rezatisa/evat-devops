@@ -1,6 +1,6 @@
 # EVAT API: Jenkins DevOps pipeline (Chameleon)
 
-Based on Chameleon's EVAT backend ([Chameleon-company/EVAT-App-BE](https://github.com/Chameleon-company/EVAT-App-BE)): a Node.js, Express, TypeScript and MongoDB REST API (about 98 documented endpoints, including auth, profiles, vehicles, stations, bookings, reviews and admin). All 7 stages are implemented and automated. The only manual step is the one-time SonarQube setup script.
+Based on Chameleon's EVAT backend ([Chameleon-company/EVAT-App-BE](https://github.com/Chameleon-company/EVAT-App-BE)): a Node.js, Express, TypeScript and MongoDB REST API (about 98 documented endpoints, including auth, profiles, vehicles, stations, bookings, reviews and admin). All 7 stages are implemented and automated. The only manual steps are the one-time setup below: filling in `jenkins/.env`, running the SonarQube setup script and creating the pipeline job.
 
 ```
  git push ─► Jenkins (polls every 2 min)
@@ -30,11 +30,9 @@ Based on Chameleon's EVAT backend ([Chameleon-company/EVAT-App-BE](https://githu
 ## 1. Setup (about 15 minutes, needs only Docker Desktop)
 
 ```bash
-# 1. Push this project to your own GitHub repo
-git init && git add . && git commit -m "EVAT API with Jenkins pipeline"
-git branch -M main
-git remote add origin https://github.com/<you>/evat-devops.git
-git push -u origin main
+# 1. Clone the repo (fork it first if you want Jenkins to build your own pushes)
+git clone https://github.com/rezatisa/evat-devops.git
+cd evat-devops
 
 # 2. Start Jenkins + SonarQube (first build of the Jenkins image takes ~5 min)
 cd jenkins
@@ -42,12 +40,12 @@ cp .env.example .env      # then set DISCORD_WEBHOOK (optional) and your own JWT
 docker compose up -d --build
 
 # 3. Configure SonarQube (password, project, quality gate, token → Jenkins)
-./sonar-setup.sh          # Windows: run it in Git Bash
+./sonar-setup.sh          # Windows PowerShell: & "C:\Program Files\Git\bin\bash.exe" sonar-setup.sh
 ```
 
 On Linux only, SonarQube also needs `sudo sysctl -w vm.max_map_count=262144`. Docker Desktop on macOS and Windows doesn't need it.
 
-**4. Create the pipeline job** (show this part in the video):
+**4. Create the pipeline job**:
 Jenkins → **New Item** → name `evat-api` → **Pipeline** → OK →
 *Pipeline* section: **Pipeline script from SCM** → SCM **Git** → Repository URL = your repo → Branch `*/main` → Script Path `Jenkinsfile` → **Save** → **Build Now**.
 
@@ -77,7 +75,7 @@ Without them, the pipeline still passes and keeps the tag and image locally.
 - The suite has 143 tests in 18 suites, including new tests for the `/health` and `/metrics` endpoints.
 - Gates: any failing test, or coverage below the thresholds in `jest.ci.config.js`, fails the build.
 - Jenkins shows JUnit trends, a Cobertura coverage chart and the HTML coverage report.
-- **Scope decision:** 8 upstream suites were already failing on `main` because source signatures changed and nobody updated the tests. They are listed in `knownBroken` and excluded from the gate. The unit guidance says to pick a subset.
+- **Scope decision:** 8 upstream suites were already failing on `main` because source signatures changed and nobody updated the tests. They are listed in `knownBroken` in `jest.ci.config.js` and excluded from the gate. The unit guidance says to pick a subset.
 
 ### Code Quality
 - SonarQube analyses TypeScript and imports `reports/coverage/lcov.info`.
@@ -155,8 +153,18 @@ The runtime image was also hardened: non-root `USER node`, npm/yarn/corepack rem
   - Alertmanager is ready
   - no critical alert is firing (if one is, the build fails)
 
+## 3. Troubleshooting
 
-## 3. Changes made to the upstream project
+| Problem | Fix |
+|---|---|
+| Port 8080 already in use on Windows | A local Jenkins service is running. In an Admin PowerShell: `Stop-Service Jenkins; Set-Service Jenkins -StartupType Disabled` |
+| `no configuration file provided` | Run `docker compose` from inside the `jenkins` folder. |
+| `bash sonar-setup.sh` opens WSL or fails | Use Git Bash: `& "C:\Program Files\Git\bin\bash.exe" sonar-setup.sh` |
+| Code Quality fails with `401` | The SonarQube token is invalid. Re-run `sonar-setup.sh` in the same `jenkins` folder, then `docker compose up -d`. |
+| Code Quality fails with `sonarqube: Name or service not known` | SonarQube stopped, usually out of memory (exit code 137). Run `docker start evat-sonarqube`, give Docker more memory, and build again. |
+| Containers show `Exited` after a restart | `cd jenkins; docker compose up -d`, then `docker start` the app and monitoring containers, or run a new build. |
+
+## 4. Changes made to the upstream project
 
 | File | Change |
 |---|---|
