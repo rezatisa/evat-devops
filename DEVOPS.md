@@ -155,26 +155,8 @@ The runtime image was also hardened: non-root `USER node`, npm/yarn/corepack rem
   - Alertmanager is ready
   - no critical alert is firing (if one is, the build fails)
 
-## 3. Demo video script (under 10 minutes)
 
-1. **(1 min) Project intro.** Open the repo, `server.ts`, and Swagger at `:8082/api/docs`.
-2. **(1.5 min) Setup.** Show the clone, `docker compose up -d --build` and `./sonar-setup.sh`, then create the Pipeline job from SCM.
-3. **(1 min) Trigger.** Push a small commit, show Jenkins picking it up, and open the stage view.
-4. **(4 min) Walk through each stage log:**
-   - Build: docker build output and archived artefacts
-   - Test: the JUnit and coverage charts
-   - SonarQube: the dashboard and the EVAT Gate conditions
-   - Security: the audit and Trivy reports, then the findings table above
-   - Deploy: smoke test output, then `docker ps` to show the staging and prod containers
-   - Release: tag, release notes, and the rollback code
-5. **(1.5 min) Monitoring:**
-   - Show the Grafana dashboard and Prometheus targets.
-   - Run `sh deploy/monitoring/simulate-outage.sh` (or `docker stop evat-prod-api`) and watch `EvatApiDown` go pending, then firing, at `:9090/alerts`.
-   - Show the FIRING message in the Discord channel.
-   - Run `docker start evat-prod-api` and show the RESOLVED message in Discord.
-6. **(0.5 min, optional) Gates.** Show a failing gate (for example, break a test) so the pipeline stops before deploy.
-
-## 4. Changes made to the upstream project
+## 3. Changes made to the upstream project
 
 | File | Change |
 |---|---|
